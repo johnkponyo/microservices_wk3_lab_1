@@ -35,7 +35,7 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
-    Default: my-key-pair
+    Default: labuser
 
   SSHLocation:
     Type: String
@@ -270,7 +270,7 @@ Resources:
       LaunchTemplateName: Auto-Scaling-Lab-Template
       VersionDescription: Initial version
       LaunchTemplateData:
-        ImageId: ami-0c55b159cbfafe1f0  # Amazon Linux 2 AMI (update as needed)
+        ImageId: ami-02a53b0d62d37a757
         InstanceType: !Ref InstanceType
         KeyName: !Ref KeyName
         SecurityGroupIds:
@@ -353,7 +353,7 @@ Resources:
                     <div id="instance-info">
                         <h2>Hello from <span id="ip-address">INSTANCE_IP</span> / <span id="instance-id">INSTANCE_ID</span></h2>
                     </div>
-                    <button id="stress-button">Stress CPU (60 seconds)</button>
+                    <button id="stress-button">Stress CPU (120 seconds)</button>
                     <button id="stop-button" style="display: none;">Stop CPU Stress</button>
                     <div id="status">
                         CPU stress in progress... This should trigger auto scaling when utilization exceeds 50%.
@@ -375,12 +375,12 @@ Resources:
                                 document.getElementById('stress-button').style.display = 'none';
                                 document.getElementById('stop-button').style.display = 'inline-block';
                                 
-                                // Reset after 60 seconds
+                                // Reset after 120 seconds
                                 setTimeout(function() {
                                     document.getElementById('status').classList.remove('active');
                                     document.getElementById('stress-button').style.display = 'inline-block';
                                     document.getElementById('stop-button').style.display = 'none';
-                                }, 60000);
+                                }, 120000);
                             })
                             .catch(error => {
                                 console.error('Error:', error);
@@ -411,11 +411,10 @@ Resources:
             
             # Create PHP script to stress CPU
             cat > /var/www/html/stress.php << 'EOF'
-            cat > /var/www/html/stress.php << 'EOF'
             <?php
             // Start CPU stress process in background
-            exec('stress-ng --cpu 1 --cpu-load 100 --timeout 60s > /dev/null 2>&1 &');
-            echo "CPU stress initiated for 60 seconds";
+            exec('stress-ng --cpu 1 --cpu-load 100 --timeout 120s > /dev/null 2>&1 &');
+            echo "CPU stress initiated for 120 seconds";
             ?>
             EOF
             
