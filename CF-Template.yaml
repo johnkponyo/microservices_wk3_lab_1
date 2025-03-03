@@ -500,7 +500,7 @@ Resources:
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 50.0
+        TargetValue: 40.0
       EstimatedInstanceWarmup: 300
 
   # IAM Role for EC2 instances
