@@ -1,1 +1,1 @@
-# microservices-_wk3-lab_CF-Template
+# Microservices Week 3 Lab - Cloud Formation Template
