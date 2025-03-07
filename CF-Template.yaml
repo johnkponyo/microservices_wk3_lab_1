@@ -412,8 +412,21 @@ Resources:
             # Create PHP script to stress CPU
             cat > /var/www/html/stress.php << 'EOF'
             <?php
-            // Start CPU stress process in background
-            exec('stress-ng --cpu 1 --cpu-load 100 --timeout 120s > /dev/null 2>&1 &');
+            // Starting multiple CPU stress processes to ensure we reach ~70% utilization
+            // Using more workers and different stress methods
+            exec('stress-ng --cpu 2 --cpu-load 100 --cpu-method matrixprod --timeout 120s > /dev/null 2>&1 &');
+            exec('stress-ng --vm 1 --vm-bytes 256M --timeout 120s > /dev/null 2>&1 &');
+            exec('stress-ng --io 2 --timeout 120s > /dev/null 2>&1 &');
+
+            // Increase local PHP processing to add additional CPU load
+            $endTime = time() + 10; // Run local CPU stress for 10 seconds
+            while (time() < $endTime) {
+                // Compute-intensive operations
+                for ($i = 0; $i < 1000000; $i++) {
+                    $x = sin(microtime(true)) * cos(microtime(true)) * tan(microtime(true));
+                }
+            }
+
             echo "CPU stress initiated for 120 seconds";
             ?>
             EOF
