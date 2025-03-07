@@ -281,8 +281,8 @@ Resources:
             # Update system
             yum update -y
             
-            # Install Apache
-            yum install -y httpd
+            # Install Apache and PHP
+            yum install -y httpd php
             
             # Install stress tool
             amazon-linux-extras install epel -y
@@ -409,15 +409,21 @@ Resources:
             sed -i "s/INSTANCE_IP/$PRIVATE_IP/g" /var/www/html/index.html
             sed -i "s/INSTANCE_ID/$INSTANCE_ID/g" /var/www/html/index.html
             
-            # Create PHP script to stress CPU
+            # Create PHP script to stress CPU with logging
             cat > /var/www/html/stress.php << 'EOF'
             <?php
+            // Log the start of the stress test
+            file_put_contents('/tmp/stress_log.txt', date('Y-m-d H:i:s') . " - Starting stress test\n", FILE_APPEND);
+            
             // Starting multiple CPU stress processes to ensure we reach ~70% utilization
             // Using more workers and different stress methods
-            exec('stress-ng --cpu 2 --cpu-load 100 --cpu-method matrixprod --timeout 120s > /dev/null 2>&1 &');
+            exec('stress-ng --cpu 2 --cpu-load 100 --cpu-method matrixprod --timeout 120s > /tmp/stress_output.log 2>&1 &', $output, $return_var);
             exec('stress-ng --vm 1 --vm-bytes 256M --timeout 120s > /dev/null 2>&1 &');
             exec('stress-ng --io 2 --timeout 120s > /dev/null 2>&1 &');
-
+            
+            // Log if the commands executed successfully
+            file_put_contents('/tmp/stress_log.txt', date('Y-m-d H:i:s') . " - Command execution return code: $return_var\n", FILE_APPEND);
+            
             // Increase local PHP processing to add additional CPU load
             $endTime = time() + 10; // Run local CPU stress for 10 seconds
             while (time() < $endTime) {
@@ -426,7 +432,9 @@ Resources:
                     $x = sin(microtime(true)) * cos(microtime(true)) * tan(microtime(true));
                 }
             }
-
+            
+            file_put_contents('/tmp/stress_log.txt', date('Y-m-d H:i:s') . " - PHP local processing completed\n", FILE_APPEND);
+            
             echo "CPU stress initiated for 120 seconds";
             ?>
             EOF
@@ -434,8 +442,15 @@ Resources:
             # Create PHP script to stop CPU stress
             cat > /var/www/html/stop.php << 'EOF'
             <?php
+            // Log stop request
+            file_put_contents('/tmp/stress_log.txt', date('Y-m-d H:i:s') . " - Stopping stress test\n", FILE_APPEND);
+            
             // Kill all stress-ng processes
-            exec('pkill stress-ng');
+            exec('pkill stress-ng', $output, $return_var);
+            
+            // Log the result
+            file_put_contents('/tmp/stress_log.txt', date('Y-m-d H:i:s') . " - Stop command return code: $return_var\n", FILE_APPEND);
+            
             echo "CPU stress stopped";
             ?>
             EOF
@@ -443,6 +458,13 @@ Resources:
             # Set proper permissions
             chmod 755 /var/www/html/stress.php
             chmod 755 /var/www/html/stop.php
+            
+            # Also make PHP scripts readable by Apache
+            chown apache:apache /var/www/html/stress.php
+            chown apache:apache /var/www/html/stop.php
+            
+            # Verify PHP is properly configured with Apache
+            echo "<?php phpinfo(); ?>" > /var/www/html/info.php
             
             # Start Apache and enable on boot
             systemctl start httpd
